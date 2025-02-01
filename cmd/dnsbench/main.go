@@ -1,15 +1,16 @@
 package main
 
 import (
-	_ "embed"
-	"flag"
+	"flag" //nolint:depguard // We only allow to import the flag package in here
 	"fmt"
-	"log"
+	"log" //nolint:depguard // TODO: Switch to log/slog
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/leonklingele/dnsbench"
+
+	_ "embed"
 )
 
 const (
@@ -18,25 +19,24 @@ const (
 	defaultNumWorkers = 1
 )
 
-var (
-	//go:embed domains.txt
-	defaultDomains string
+//go:embed domains.txt
+var defaultDomains string
 
-	//nolint: gochecknoglobals
-	defaultServers = []string{
+func defaultServers() []string {
+	return []string{
 		"1.1.1.1",
 		"8.8.4.4",
 		"8.8.8.8",
 		"9.9.9.9",
 	}
-)
+}
 
 func run() error {
 	defaultDomainsFlag := strings.Join(strings.Split(defaultDomains, "\n"), ", ")
 	if maxLen, l := 52, len(defaultDomainsFlag); l > maxLen {
 		defaultDomainsFlag = defaultDomainsFlag[:maxLen] + "…"
 	}
-	defaultServersFlag := strings.Join(defaultServers, ", ")
+	defaultServersFlag := strings.Join(defaultServers(), ", ")
 
 	domains := flag.String("domains", defaultDomainsFlag, "comma-separated list of domain names to benchmark")
 	servers := flag.String("servers", defaultServersFlag, "comma-separated list of DNS servers to run benchmark against")
@@ -55,7 +55,7 @@ func run() error {
 			rd = strings.TrimSpace(rd)
 			rd = strings.ToLower(rd)
 
-			if len(rd) == 0 || strings.HasPrefix(rd, "#") {
+			if rd == "" || strings.HasPrefix(rd, "#") {
 				continue
 			}
 
@@ -69,7 +69,7 @@ func run() error {
 			rd = strings.TrimSpace(rd)
 			rd = strings.ToLower(rd)
 
-			if len(rd) == 0 {
+			if rd == "" {
 				continue
 			}
 
@@ -81,10 +81,10 @@ func run() error {
 	var ss []dnsbench.Server
 	if *servers == defaultServersFlag {
 		// Use default servers
-		for _, ds := range defaultServers {
+		for _, ds := range defaultServers() {
 			s, err := dnsbench.NewServer(ds)
 			if err != nil {
-				return err //nolint: wrapcheck
+				return fmt.Errorf("failed to create server conf: %w", err)
 			}
 
 			ss = append(ss, s)
@@ -97,13 +97,13 @@ func run() error {
 			rs = strings.TrimSpace(rs)
 			rs = strings.ToLower(rs)
 
-			if len(rs) == 0 {
+			if rs == "" {
 				continue
 			}
 
 			s, err := dnsbench.NewServer(rs)
 			if err != nil {
-				return err //nolint: wrapcheck
+				return fmt.Errorf("failed to create server conf: %w", err)
 			}
 
 			ss = append(ss, s)
@@ -122,8 +122,8 @@ func run() error {
 			servers = append(servers, s.String())
 		}
 
-		//nolint: forbidigo
-		fmt.Printf(
+		//nolint:errcheck,forbidigo // We explicitly want to print to stdout
+		_, _ = fmt.Printf(
 			"Domains: %s\nServers: %s\nProto:   %s\nQueries: %d\nWorkers: %d\n",
 			strings.Join(domains, ", "),
 			strings.Join(servers, ", "),
@@ -149,7 +149,7 @@ func run() error {
 	for _, s := range ss {
 		c, err := dnsbench.Bench(ds, s, *proto, *numQueries, *numWorkers)
 		if err != nil {
-			return err //nolint: wrapcheck
+			return fmt.Errorf("failed to bench: %w", err)
 		}
 
 		var acc time.Duration
@@ -160,8 +160,8 @@ func run() error {
 			acci++
 
 			domainFormatter := fmt.Sprintf("%%-%ds", maxDomainLen+1)
-			//nolint: forbidigo
-			fmt.Printf(
+			//nolint:errcheck,forbidigo // We explicitly want to print to stdout
+			_, _ = fmt.Printf(
 				"[%s]: avg query time for "+domainFormatter+": %s\n",
 				s,
 				res.WorkItem.Domain,
@@ -181,19 +181,16 @@ func run() error {
 	}
 
 	// Print result
-	{
-		sort.Slice(results, func(i, j int) bool {
-			return results[i].duration < results[j].duration
-		})
-
-		for _, r := range results {
-			//nolint: forbidigo
-			fmt.Printf(
-				"Summary [%s]: avg query time: %s\n",
-				r.server,
-				r.duration.String(),
-			)
-		}
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].duration < results[j].duration
+	})
+	for _, r := range results {
+		//nolint:errcheck,forbidigo // We explicitly want to print to stdout
+		_, _ = fmt.Printf(
+			"Summary [%s]: avg query time: %s\n",
+			r.server,
+			r.duration.String(),
+		)
 	}
 
 	return nil

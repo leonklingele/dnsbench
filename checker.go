@@ -21,14 +21,14 @@ func (c *checker) dnsQuery(domain string) (*dns.Msg, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query %s: %w", domain, err)
 	}
-	return r, nil //nolint: nlreturn
+	return r, nil
 }
 
 func (c *checker) Check(wi workItem) (*Result, error) {
 	numQueries := c.config.Attempts
 
 	ms := make(Measurements, 0, numQueries)
-	for i := 0; i < numQueries; i++ {
+	for range numQueries {
 		start := time.Now()
 
 		_, err := c.dnsQuery(wi.Domain.String())
@@ -51,7 +51,6 @@ func (c *checker) Check(wi workItem) (*Result, error) {
 }
 
 func newChecker(c *dns.ClientConfig, proto string) (*checker, error) {
-	//nolint: exhaustivestruct
 	client := &dns.Client{
 		Timeout: DNSTimeout,
 		Net:     proto,
@@ -65,7 +64,6 @@ func newChecker(c *dns.ClientConfig, proto string) (*checker, error) {
 		return nil, fmt.Errorf("failed to dial %s: %w", socket, err)
 	}
 
-	//nolint: exhaustivestruct
 	msg := &dns.Msg{}
 
 	return &checker{

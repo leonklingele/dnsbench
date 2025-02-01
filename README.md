@@ -1,9 +1,11 @@
 # DNSBench — DNS benchmarking utility
 
+![build](https://github.com/leonklingele/dnsbench/actions/workflows/build.yml/badge.svg)
+
 ## Installation
 
 ```sh
-go get -u github.com/leonklingele/dnsbench/...
+go install github.com/leonklingele/dnsbench/cmd/dnsbench@latest
 dnsbench -help
 ```
 

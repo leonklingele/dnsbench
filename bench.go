@@ -1,7 +1,7 @@
 package dnsbench
 
 import (
-	"log"
+	"log" //nolint:depguard // TODO: Switch to log/slog
 	"strconv"
 	"sync"
 	"time"
@@ -17,7 +17,6 @@ func Bench(domains []Domain, server Server, proto string, queries, workers int) 
 	servers := []string{server.Server}
 	port := strconv.Itoa(server.Port)
 
-	//nolint: exhaustivestruct
 	config := &dns.ClientConfig{
 		Servers:  servers,
 		Port:     port,
@@ -29,7 +28,7 @@ func Bench(domains []Domain, server Server, proto string, queries, workers int) 
 	wch := make(chan workItem)
 	rch := make(chan Result)
 
-	for i := 0; i < workers; i++ {
+	for range workers {
 		c, err := newChecker(config, proto)
 		if err != nil {
 			return nil, err
@@ -43,7 +42,7 @@ func Bench(domains []Domain, server Server, proto string, queries, workers int) 
 				res, err := c.Check(wi)
 				if err != nil {
 					log.Printf("failed to check: %v\n", err)
-					continue //nolint: nlreturn
+					continue
 				}
 				rch <- *res
 			}
