@@ -15,10 +15,6 @@ type Server struct {
 	Port   int
 }
 
-func (s Server) String() string {
-	return fmt.Sprintf("%s:%d", s.Server, s.Port)
-}
-
 func NewServer(s string) (Server, error) {
 	split := strings.Split(s, ":")
 
@@ -38,4 +34,8 @@ func NewServer(s string) (Server, error) {
 		Server: server,
 		Port:   port,
 	}, nil
+}
+
+func (s Server) String() string {
+	return fmt.Sprintf("%s:%d", s.Server, s.Port)
 }
