@@ -2,7 +2,7 @@ module github.com/leonklingele/dnsbench
 
 go 1.24.2
 
-require github.com/miekg/dns v1.1.65
+require github.com/miekg/dns v1.1.66
 
 require (
 	golang.org/x/mod v0.24.0 // indirect
